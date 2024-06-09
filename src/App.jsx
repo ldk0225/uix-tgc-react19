@@ -1,7 +1,9 @@
 import { useActionState, useRef } from "react";
+import {useFormStatus} from 'react-dom'
+
 
 /**
- * https://github.com/facebook/react/pull/28491
+ * https://react.dev/reference/react-dom/hooks/useFormStatus
  */
 
 const updateName = async () => {
@@ -10,6 +12,13 @@ const updateName = async () => {
             resolve(true)
         }, 3000)
     })
+}
+
+function DesignButton() {
+    const {pending} = useFormStatus();
+    return <button type="submit" disabled={pending} >
+        버튼에서 맥락을 뺴올수있나?
+    </button>
 }
 
 function App() {
@@ -27,7 +36,7 @@ function App() {
     return (
         <form action={action}>
             <input type="text" name="name" ref={ref}/>
-            <button type="submit" disabled={isPending} >Update</button>
+            <DesignButton />
             {error && <p>submit 완료 or 에러 표출</p>}
         </form>
     );
