@@ -1,45 +1,56 @@
-import { useActionState, useRef } from "react";
-import {useFormStatus} from 'react-dom'
-
+import { useOptimistic, useState, useRef } from "react";
 
 /**
- * https://react.dev/reference/react-dom/hooks/useFormStatus
+ * https://react.dev/reference/react/useOptimistic
  */
 
-const updateName = async () => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(true)
-        }, 3000)
-    })
+export async function deliverMessage(message) {
+    await new Promise((res) => setTimeout(res, 1000));
+    return message;
 }
 
-function DesignButton() {
-    const {pending} = useFormStatus();
-    return <button type="submit" disabled={pending} >
-        버튼에서 맥락을 뺴올수있나?
-    </button>
-}
 
-function App() {
-    const ref = useRef(null);
-    const [error, action, isPending] = useActionState( async (previousState, formData) => {
-            const error = await updateName(formData.get("name"));
-            if (error) {
-                return error;
+function Thread({ messages, sendMessage }) {
+    const formRef = useRef();
+    async function formAction(formData) {
+        addOptimisticMessage(formData.get("message"));
+        formRef.current.reset();
+        await sendMessage(formData);
+    }
+    const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+        messages,
+        (state, newMessage) => [
+            ...state,
+            {
+                text: newMessage,
+                sending: true
             }
-            return null;
-        },
-        null,);
-
+        ]
+    );
 
     return (
-        <form action={action}>
-            <input type="text" name="name" ref={ref}/>
-            <DesignButton />
-            {error && <p>submit 완료 or 에러 표출</p>}
-        </form>
+        <>
+            {optimisticMessages.map((message, index) => (
+                <div key={index}>
+                    {message.text}
+                    {!!message.sending && <small> (Sending...)</small>}
+                </div>
+            ))}
+            <form action={formAction} ref={formRef}>
+                <input type="text" name="message" placeholder="Hello!" />
+                <button type="submit">Send</button>
+            </form>
+        </>
     );
 }
 
-export default App
+export default function App() {
+    const [messages, setMessages] = useState([
+        { text: "Hello there!", sending: false, key: 1 }
+    ]);
+    async function sendMessage(formData) {
+        const sentMessage = await deliverMessage(formData.get("message"));
+        setMessages((messages) => [...messages, { text: sentMessage }]);
+    }
+    return <Thread messages={messages} sendMessage={sendMessage} />;
+}
