@@ -1,9 +1,9 @@
-import {useState} from "react";
+import {useState, useTransition} from "react";
 
-const updateName = (name:string):Promise<{data: string}> => {
+const updateName = (name:string):Promise<boolean> => {
 return new Promise((resolve) => {
   setTimeout(() => {
-  resolve({data: name});
+  resolve(true);
   }, 3000)
 })
 }
@@ -11,18 +11,15 @@ return new Promise((resolve) => {
 function App() {
   const [name, setName] = useState("");
   const [error, setError] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async () => {
-    setIsPending(true);
-    const data = await updateName(name);
-    setIsPending(false);
-    if (error) {
-      setError(error);
-      return;
-    }
-
-    console.log(data)
+  const handleSubmit =  () => {
+    startTransition(async () => {
+      const error = await updateName(name);
+      if (error) {
+        setError(error);
+      }
+    });
   };
 
   return (
